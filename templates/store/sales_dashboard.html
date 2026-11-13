@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Ventas y pedidos | ContainerPro{% endblock %}
+{% block content %}
+<main class="container account-page sales-page">
+  <span class="eyebrow">Administración</span>
+  <h1>Ventas y pedidos</h1>
+  <div class="stats-grid">
+    <article class="stat-card"><span>Pedidos registrados</span><strong>{{ counts.total }}</strong></article>
+    <article class="stat-card"><span>Pendientes</span><strong>{{ counts.pending }}</strong></article>
+    <article class="stat-card"><span>Confirmados</span><strong>{{ counts.confirmed }}</strong></article>
+    <article class="stat-card"><span>Cancelados</span><strong>{{ counts.cancelled }}</strong></article>
+    <article class="stat-card"><span>Total confirmado</span><strong>${{ confirmed_total }}</strong></article>
+  </div>
+
+  <h2>Pedidos recientes</h2>
+  <p class="checkout-note">Se muestran hasta 100 pedidos. Confirmar un pedido no procesa el pago; solo registra la confirmación administrativa.</p>
+  {% for order in orders %}
+  <article class="order-card admin-order-card">
+    <div class="order-card-heading">
+      <strong>Pedido #{{ order.id }} · {{ order.customer_name }}</strong>
+      <span>{{ order.created_at|date:"d/m/Y H:i" }} · Pedido: {{ order.get_status_display }} · Pago: {{ order.get_payment_status_display }} · Total ${{ order.order_total|default:0 }}</span>
+    </div>
+    <p>{{ order.customer_email }} · {{ order.phone }}{% if order.rut %} · RUT {{ order.rut }}{% endif %} · {{ order.delivery_address }}</p>
+    <ul class="order-lines">
+      {% for item in order.items.all %}
+      <li><span>{{ item.quantity }} × {{ item.product_name }}</span><strong>${% widthratio item.unit_price 1 item.quantity %}</strong></li>
+      {% endfor %}
+    </ul>
+    {% if order.notes %}<p>Notas: {{ order.notes }}</p>{% endif %}
+    <form method="post" action="{% url 'order_update_status' order.id %}" class="status-form">
+      {% csrf_token %}
+      <label for="status-{{ order.id }}">Estado</label>
+      <select id="status-{{ order.id }}" name="status">
+        {% for value, label in status_choices %}
+        <option value="{{ value }}"{% if order.status == value %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-secondary" type="submit">Actualizar</button>
+    </form>
+    <a href="{% url 'order_detail' order.id %}">Ver detalle del pedido</a>
+  </article>
+  {% empty %}
+  <p>Aún no hay pedidos registrados.</p>
+  {% endfor %}
+</main>
+{% endblock %}

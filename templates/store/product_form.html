@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Administrar productos | ContainerPro{% endblock %}
+{% block content %}
+<main class="container account-page admin-page">
+  <section class="account-card admin-card">
+    <span class="eyebrow">Administración</span>
+    <h1>{% if editing_product %}Editar producto{% else %}Agregar producto{% endif %}</h1>
+    <p>Agrega la información, existencias e imagen. El catálogo no permitirá añadir al carrito más unidades que las registradas.</p>
+    <form method="post" enctype="multipart/form-data" class="site-form">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      {% for field in form %}
+      <div class="form-field">
+        {{ field.label_tag }}{{ field }}{{ field.errors }}
+        {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+      </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary">{% if editing_product %}Guardar cambios{% else %}Guardar producto{% endif %}</button>
+      {% if editing_product %}<a class="btn btn-secondary" href="{% url 'product_create' %}">Cancelar</a>{% endif %}
+    </form>
+  </section>
+
+  <section class="product-management">
+    <p><a class="btn btn-secondary" href="{% url 'sales_dashboard' %}">Ver estadísticas y pedidos</a></p>
+    <article class="account-card settings-card">
+      <h2>Correo de consultas y reclamos</h2>
+      <p>Los mensajes enviados desde la tienda se guardan y se envían a este correo.</p>
+      <form method="post" action="{% url 'contact_settings_update' %}" class="site-form">
+        {% csrf_token %}
+        <div class="form-field">{{ settings_form.contact_email.label_tag }}{{ settings_form.contact_email }}{{ settings_form.contact_email.errors }}</div>
+        <button type="submit" class="btn btn-primary">Guardar correo</button>
+      </form>
+      <p class="checkout-note">El servidor SMTP se configura en el archivo .env, no desde el navegador.</p>
+    </article>
+
+    <h2>Productos existentes</h2>
+    {% for product in products %}
+    <article class="managed-product">
+      <div>
+        <strong>{{ product.name }}</strong>
+        <span>{{ product.category }} · ${{ product.price }} · Existencias: {{ product.stock }} · {% if product.is_active %}Publicado{% else %}Oculto{% endif %}</span>
+      </div>
+      {% if product.image %}<img class="managed-product-image" src="{{ product.image.url }}" alt="Imagen de {{ product.name }}">{% endif %}
+      <div class="managed-actions">
+        <a class="btn btn-secondary" href="{% url 'product_edit' product.id %}">Editar</a>
+        <form method="post" action="{% url 'product_toggle' product.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-secondary">{% if product.is_active %}Ocultar{% else %}Publicar{% endif %}</button>
+        </form>
+      </div>
+    </article>
+    {% empty %}
+    <p>Aún no has añadido productos.</p>
+    {% endfor %}
+
+    <h2>Últimas consultas y reclamos</h2>
+    {% for inquiry in inquiries %}
+    <article class="inquiry-card">
+      <strong>{{ inquiry.get_topic_display }}: {{ inquiry.subject }}</strong>
+      <span>{{ inquiry.name }} · {{ inquiry.email }} · {{ inquiry.created_at|date:"d/m/Y H:i" }}</span>
+      <p>{{ inquiry.message|linebreaksbr }}</p>
+      {% if inquiry.admin_reply %}
+      <p class="saved-reply"><strong>Respuesta guardada{% if inquiry.replied_at %} · {{ inquiry.replied_at|date:"d/m/Y H:i" }}{% else %} · pendiente de envío{% endif %}:</strong><br>{{ inquiry.admin_reply|linebreaksbr }}</p>
+      {% endif %}
+      <form method="post" action="{% url 'inquiry_reply' inquiry.id %}" class="site-form inquiry-reply-form">
+        {% csrf_token %}
+        <div class="form-field">
+          <label for="reply-{{ inquiry.id }}">Responder por correo al cliente</label>
+          <textarea id="reply-{{ inquiry.id }}" name="reply" rows="3" maxlength="5000" required>{% if inquiry.admin_reply %}{{ inquiry.admin_reply }}{% endif %}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">{% if inquiry.admin_reply %}Guardar y reenviar respuesta{% else %}Responder{% endif %}</button>
+      </form>
+      <form method="post" action="{% url 'inquiry_delete' inquiry.id %}" class="delete-form" onsubmit="return confirm('¿Eliminar esta consulta definitivamente?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-secondary">Eliminar consulta</button>
+      </form>
+    </article>
+    {% empty %}
+    <p>Aún no hay mensajes recibidos.</p>
+    {% endfor %}
+  </section>
+</main>
+{% endblock %}

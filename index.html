@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}ContainerPro | Contenedores para negocio{% endblock %}
+
+{% block content %}
+<section class="hero" id="inicio">
+  <div class="container hero-inner">
+    <div class="hero-copy">
+      <span class="eyebrow">Infraestructura modular</span>
+      <h1>Contenedores listos para crecer tu negocio.</h1>
+      <p>Soluciones duraderas para almacenes, oficinas, tiendas, talleres y proyectos temporales. Compra con confianza, entrega ágil y soporte especializado.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#catalogo">Ver catálogo</a>
+        <a class="btn btn-secondary" href="#contacto">Solicitar cotización</a>
+      </div>
+    </div>
+    <div class="hero-card" aria-label="Visualización de contenedor">
+      <div class="hero-card-inner">📦</div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="catalogo">
+  <div class="container">
+    <div class="section-head">
+      <div><span class="eyebrow">Catálogo</span><h2>Contenedores y módulos</h2></div>
+      <p>Elige un modelo para añadirlo a tu carrito.</p>
+    </div>
+    <div class="catalog-grid" id="product-list">
+      {% for product in products %}
+      <article class="product-card">
+        <div class="product-visual" role="img" aria-label="{{ product.name }}">
+          {% if product.image %}<img class="product-image" src="{{ product.image.url }}" alt="{{ product.name }}">
+          {% else %}<span aria-hidden="true">{{ product.emoji }}</span>{% endif %}
+        </div>
+        <div class="product-body">
+          <span class="product-tag">{{ product.category }}</span>
+          <h3 class="product-title">{{ product.name }}</h3>
+          <p class="product-description">{{ product.description }}</p>
+          <div class="product-meta"><span>{{ product.dimensions }}</span></div>
+          <p class="stock-status {% if product.stock == 0 %}out-of-stock{% endif %}" data-stock-label="{{ product.id }}" data-initial-stock="{{ product.stock }}">
+            {% if product.stock %}Existencias: {{ product.stock }}{% else %}Agotado{% endif %}
+          </p>
+          <div class="price-row">
+            <span class="price" data-price="{{ product.price }}">{{ product.price }}</span>
+            <button class="btn-add" type="button" data-id="{{ product.id }}" data-name="{{ product.name }}" data-price="{{ product.price }}" data-emoji="{{ product.emoji }}" data-stock="{{ product.stock }}" aria-label="Agregar {{ product.name }} al carrito" {% if not product.stock %}disabled{% endif %}>+</button>
+          </div>
+        </div>
+      </article>
+      {% empty %}
+      <p class="empty-catalog">Todavía no hay productos publicados. Vuelve pronto para ver el catálogo.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section" id="contacto">
+  <div class="container">
+    <details class="contact-disclosure" id="contact-disclosure"{% if contact_open %} open{% endif %}>
+      <summary class="cta-strip contact-summary">
+        <div>
+          <h3>¿Tienes dudas o un reclamo?</h3>
+          <p>Presiona Contáctanos para abrir el formulario.</p>
+        </div>
+        <span class="btn btn-secondary">Contáctanos</span>
+      </summary>
+      <form class="account-card contact-form" id="formulario-contacto" method="post" action="{% url 'submit_inquiry' %}">
+        {% csrf_token %}
+        <h3>Consultas y reclamos</h3>
+        {% for field in inquiry_form %}
+        <div class="form-field{% if field.is_hidden %} honeypot-field{% endif %}">
+          {{ field.label_tag }}{{ field }}{{ field.errors }}
+        </div>
+        {% endfor %}
+        {% if not contact_email %}<p class="checkout-note">El negocio aún no ha configurado un correo para recibir mensajes.</p>{% endif %}
+        <button class="btn btn-primary" type="submit">Enviar mensaje</button>
+      </form>
+    </details>
+  </div>
+</section>
+
+<section class="section" id="soluciones">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">¿Por qué elegirnos?</span>
+        <h2>Soluciones que encajan con tu operación</h2>
+      </div>
+    </div>
+    <div class="feature-grid">
+      <article class="feature"><div class="feature-icon">🚚</div><strong>Entrega coordinada</strong><span>Coordinamos el despacho según tu ubicación.</span></article>
+      <article class="feature"><div class="feature-icon">🛡️</div><strong>Material resistente</strong><span>Soluciones robustas para uso y almacenamiento.</span></article>
+      <article class="feature"><div class="feature-icon">📐</div><strong>Diseño modular</strong><span>Alternativas para distintos tipos de proyectos.</span></article>
+      <article class="feature"><div class="feature-icon">💬</div><strong>Asesoría cercana</strong><span>Te ayudamos a elegir el modelo adecuado.</span></article>
+    </div>
+  </div>
+</section>
+
+<div class="cart-overlay" id="cart-overlay"></div>
+<aside class="cart-panel" id="cart-panel" aria-label="Carrito de compras" aria-hidden="true">
+  <div class="cart-header">
+    <h3>Tu carrito</h3>
+    <button type="button" class="close-cart" id="close-cart" aria-label="Cerrar carrito">×</button>
+  </div>
+  <div class="cart-items" id="cart-items"></div>
+  <div class="cart-summary">
+    <div class="summary-row"><span>Productos</span><strong id="cart-qty-summary">0</strong></div>
+    <div class="summary-row"><span>Subtotal estimado</span><strong id="cart-subtotal">$0</strong></div>
+    <div class="summary-row total"><span>Total estimado</span><strong id="cart-total">$0</strong></div>
+    <p class="checkout-note">Al enviar el pedido se reservarán existencias. El pago se inicia desde el detalle del pedido; esta tienda no guarda datos de tarjetas.</p>
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'order_create' %}" id="order-checkout-form" class="site-form checkout-form">
+      {% csrf_token %}
+      <input type="hidden" name="items" id="checkout-items">
+      <div class="form-field">{{ checkout_form.customer_name.label_tag }}{{ checkout_form.customer_name }}{{ checkout_form.customer_name.errors }}</div>
+      <div class="form-field">{{ checkout_form.delivery_address.label_tag }}{{ checkout_form.delivery_address }}{{ checkout_form.delivery_address.errors }}</div>
+      <div class="form-field">{{ checkout_form.notes.label_tag }}{{ checkout_form.notes }}{{ checkout_form.notes.errors }}</div>
+      <p class="checkout-note">El correo, el RUT y el teléfono se toman de <a href="{% url 'account' %}">Mi cuenta</a>. Para comprar, el teléfono debe estar verificado.</p>
+      <button type="submit" class="checkout-btn" id="checkout-submit">Enviar pedido</button>
+    </form>
+    {% else %}
+    <a class="btn btn-primary checkout-login" href="{% url 'login' %}?next={{ request.path|urlencode }}">Ingresa para enviar el pedido</a>
+    {% endif %}
+  </div>
+</aside>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/app.js' %}" defer></script>
+{% endblock %}

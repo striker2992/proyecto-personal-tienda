@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Mi cuenta | ContainerPro{% endblock %}
+{% block content %}
+<main class="container account-page">
+  <section class="account-card profile-card">
+    <span class="eyebrow">Área de cliente</span>
+    <h1>Mis datos</h1>
+    <p>Actualiza tu información de contacto para tus pedidos.</p>
+    <form method="post" class="site-form">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      {% for field in form %}
+      <div class="form-field">
+        {{ field.label_tag }}{{ field }}{{ field.errors }}
+      </div>
+      {% endfor %}
+      <h2>Datos de contacto</h2>
+      <p>Guarda estos datos para que aparezcan automáticamente al preparar tus pedidos.</p>
+      {{ profile_form.non_field_errors }}
+      {% for field in profile_form %}
+      <div class="form-field">
+        {{ field.label_tag }}{{ field }}{{ field.errors }}
+        {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+      </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary">Guardar mis datos</button>
+    </form>
+    {% if profile.phone %}
+      {% if profile.phone_verified %}
+      <p class="checkout-note">Teléfono verificado: {{ profile.phone }}</p>
+      {% else %}
+      <p class="checkout-note">Teléfono pendiente de verificación: {{ profile.phone }}</p>
+      {% if profile.phone_verification_code_hash %}
+      <form method="post" action="{% url 'phone_verification_confirm' %}" class="site-form">
+        {% csrf_token %}
+        <div class="form-field">
+          {{ phone_verification_form.code.label_tag }}
+          {{ phone_verification_form.code }}
+          {{ phone_verification_form.code.errors }}
+          <small>Escribe los 6 dígitos enviados por SMS. El código vence en 10 minutos.</small>
+        </div>
+        <button type="submit" class="btn btn-primary">Verificar teléfono</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'phone_verification_send' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-secondary">
+          {% if profile.phone_verification_code_hash %}Enviar otro código{% else %}Enviar código SMS{% endif %}
+        </button>
+      </form>
+      {% endif %}
+    {% endif %}
+  </section>
+
+</main>
+{% endblock %}

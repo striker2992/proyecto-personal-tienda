@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Mis compras | ContainerPro{% endblock %}
+{% block content %}
+<main class="container account-page">
+  <section class="orders-section">
+    <span class="eyebrow">Área de cliente</span>
+    <h1>Mis compras</h1>
+    <p>Consulta el estado y el detalle de tus pedidos.</p>
+    {% for order in orders %}
+    <article class="order-card">
+      <div class="order-card-heading">
+        <strong>Pedido #{{ order.id }}</strong>
+        <span>{{ order.created_at|date:"d/m/Y H:i" }} · {{ order.get_status_display }}</span>
+      </div>
+      <p>{{ order.items.count }} línea(s) · Total: ${{ order.total }}</p>
+      <p>Pago: {{ order.get_payment_status_display }}</p>
+      <a class="btn btn-secondary" href="{% url 'order_detail' order.id %}">Ver compra</a>
+    </article>
+    {% empty %}
+    <p>Aún no has realizado compras.</p>
+    <a class="btn btn-primary" href="{% url 'home' %}#catalogo">Ver catálogo</a>
+    {% endfor %}
+  </section>
+</main>
+{% endblock %}

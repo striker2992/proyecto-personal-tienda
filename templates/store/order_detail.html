@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Pedido #{{ order.id }} | ContainerPro{% endblock %}
+{% block content %}
+<main class="container account-page">
+  <section class="account-card order-detail-card">
+    <span class="eyebrow">Pedido #{{ order.id }}</span>
+    <h1>Pedido registrado</h1>
+    <p>Estado del pedido: <strong>{{ order.get_status_display }}</strong></p>
+    <p>Estado del pago: <strong>{{ order.get_payment_status_display }}</strong></p>
+    <p>Fecha: {{ order.created_at|date:"d/m/Y H:i" }}</p>
+    {% if order.payment_status == "approved" %}
+    <p>Mercado Pago confirmó el pago. El equipo coordinará contigo el despacho.</p>
+    {% elif order.status == "cancelled" %}
+    <p>Este pedido está cancelado y no admite nuevos pagos.</p>
+    {% elif payment_ready %}
+    <p>El pago se realizará de forma segura en Mercado Pago. ContainerPro no recibe ni guarda datos de tarjetas.</p>
+    <form method="post" action="{% url 'payment_create' order.id %}">
+      {% csrf_token %}
+      <button class="btn btn-primary" type="submit">
+        {% if order.payment_status == "pending" and order.mercadopago_checkout_url %}Continuar a Mercado Pago{% else %}Pagar con Mercado Pago{% endif %}
+      </button>
+    </form>
+    {% else %}
+    <p>Mercado Pago todavía no está configurado para iniciar cobros. No realices pagos por este sitio hasta que se habilite.</p>
+    {% endif %}
+    <h2>Productos</h2>
+    <ul class="order-lines">
+      {% for item in order.items.all %}
+      <li><span>{{ item.quantity }} × {{ item.product_name }} (${{ item.unit_price }} c/u)</span><strong>${% widthratio item.unit_price 1 item.quantity %}</strong></li>
+      {% endfor %}
+    </ul>
+    <p class="order-total">Total: ${{ order.total }}</p>
+    <h2>Datos de entrega</h2>
+    <p>{{ order.customer_name }} · {{ order.customer_email }} · {{ order.phone }}{% if order.rut %} · RUT {{ order.rut }}{% endif %}</p>
+    <p>{{ order.delivery_address }}</p>
+    {% if order.notes %}<p>Notas: {{ order.notes }}</p>{% endif %}
+    {% if user.is_staff %}
+    <a class="btn btn-primary" href="{% url 'sales_dashboard' %}">Volver a ventas</a>
+    {% else %}
+    <a class="btn btn-primary" href="{% url 'my_purchases' %}">Volver a mis compras</a>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}
+{% block scripts %}
+<script>
+  localStorage.removeItem('container-store-cart');
+</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Ingresar | ContainerPro{% endblock %}
+{% block content %}
+<main class="container account-page">
+  <section class="account-card">
+    <span class="eyebrow">Área de clientes</span>
+    <h1>Iniciar sesión</h1>
+    <p>Ingresa con tu cuenta de cliente o administrador.</p>
+    <form method="post" class="site-form">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      {{ form.non_field_errors }}
+      <div class="form-field">{{ form.username.label_tag }}{{ form.username }}{{ form.username.errors }}</div>
+      <div class="form-field">{{ form.password.label_tag }}{{ form.password }}{{ form.password.errors }}</div>
+      <button type="submit" class="btn btn-primary">Ingresar</button>
+    </form>
+    <p class="account-footnote">¿Aún no tienes cuenta? <a href="{% url 'register' %}">Crear cuenta de cliente</a></p>
+  </section>
+</main>
+{% endblock %}
